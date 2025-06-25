@@ -34,7 +34,3 @@ contract PaymentFirewall is Trustlined {
         require(sent, "Unable to pay tokens");
     }
 }
-
-/*
-
-*/
