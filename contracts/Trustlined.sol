@@ -9,7 +9,7 @@ import {IValidationEngine} from "./interfaces/IValidationEngine.sol";
 abstract contract Trustlined {
     /// @notice The Trustline ValidationEngine contract address. It must be set before any of the provided functions can be used
     /// @dev Multiple dapps can share the same ValidationEngine contract
-    /// @dev This contract is set by the owner and must implement the IValidationOracle interface
+    /// @dev This contract is set by the owner and must implement the IValidationEngine interface
     IValidationEngine public validationEngine;
 
     /// @dev Both a constructor and initializer functions are defined to support both upgradeable and non-upgradeable deployment scenarios
@@ -33,7 +33,7 @@ abstract contract Trustlined {
     }
 
     /// @notice Checks if a transaction is trusted
-    function checkComplianceStatus() internal view returns (bool) {
+    function checkTrustlineStatus() internal view returns (bool) {
         return validationEngine.checkTrustlineStatus(msg.sender, msg.value, msg.data);
     }
 
