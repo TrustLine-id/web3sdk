@@ -26,24 +26,24 @@ abstract contract Trustlined {
         validationEngine = IValidationEngine(validationEngine_);
     }
 
-    /// @notice Checks if a transaction is trusted
+    /// @notice Checks whether a transaction is trusted and verifies msg.sender + addresses[] against sanctions lists
     /// @param addresses An array of addresses that will be verified by the policy
     function checkTrustlineStatus(address[] memory addresses) internal view returns (bool) {
         return validationEngine.checkTrustlineStatus(msg.sender, msg.value, msg.data, addresses);
     }
 
-    /// @notice Checks if a transaction is trusted
+    /// @notice Checks whether a transaction is trusted and verifies msg.sender against sanctions lists
     function checkTrustlineStatus() internal view returns (bool) {
         return validationEngine.checkTrustlineStatus(msg.sender, msg.value, msg.data);
     }
 
-    /// @notice Requires a trusted transaction
+    /// @notice Requires a trusted transaction and non‑sanctioned msg.sender + addresses[]
     /// @param addresses An array of addresses that will be verified by the policy
     function requireTrustline(address[] memory addresses) internal {
         validationEngine.requireTrustline(msg.sender, msg.value, msg.data, addresses);
     }
 
-    /// @notice Requires a trusted transaction
+    /// @notice Requires a trusted transaction and a non‑sanctioned msg.sender
     function requireTrustline() internal {
         validationEngine.requireTrustline(msg.sender, msg.value, msg.data);
     }

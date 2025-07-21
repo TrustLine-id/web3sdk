@@ -6,7 +6,7 @@ pragma solidity ^0.8;
 /// @notice This interface defines the functions that must be implemented by the validation contract
 /// @dev This interface is used by the Trustlined contract to interact with Trustline's Validation contract
 interface IValidationEngine {
-    /// @notice Checks if a transaction is trusted
+    /// @notice Checks whether a transaction is trusted and verifies msg.sender + addresses[] against sanctions lists
     /// @param sender The transaction sender
     /// @param value Transaction value in wei
     /// @param data Transaction payload data
@@ -18,7 +18,7 @@ interface IValidationEngine {
         address[] memory addresses
     ) external view returns (bool);
 
-    /// @notice Checks if a transaction is trusted
+    /// @notice Checks whether a transaction is trusted and verifies msg.sender against sanctions lists
     /// @param sender The transaction sender
     /// @param value Transaction value in wei
     /// @param data Transaction payload data
@@ -28,7 +28,7 @@ interface IValidationEngine {
         bytes calldata data
     ) external view returns (bool);
 
-    /// @notice Requires a trusted transaction
+    /// @notice Requires a trusted transaction and non‑sanctioned msg.sender + addresses[]
     /// @dev reverts if the transaction is not compliant
     /// @param sender The transaction sender
     /// @param value Transaction value in wei
@@ -41,7 +41,7 @@ interface IValidationEngine {
         address[] memory addresses
     ) external;
 
-    /// @notice Requires a trusted transaction
+    /// @notice Requires a trusted transaction and a non‑sanctioned msg.sender
     /// @dev reverts if the transaction is not compliant
     /// @param sender The transaction sender
     /// @param value Transaction value in wei
