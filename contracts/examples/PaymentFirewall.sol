@@ -14,9 +14,8 @@ contract PaymentFirewall is Trustlined {
     /// @notice Pay native ethers to a recipient
     /// @param destination The recipient address
     function payEthers(address payable destination) public payable {
-        address[] memory addresses = new address[](2);
-        addresses[0] = msg.sender;
-        addresses[1] = destination;
+        address[] memory addresses = new address[](1);
+        addresses[0] = destination;
         requireTrustline(addresses);
         (bool sent, ) = destination.call{value: msg.value}("");
         require(sent, "Unable to pay ethers");
@@ -27,9 +26,8 @@ contract PaymentFirewall is Trustlined {
     /// @param token The ERC20 token address
     /// @param value The amount of tokens to pay
     function payTokens(address destination, address token, uint256 value) external {
-        address[] memory addresses = new address[](2);
-        addresses[0] = msg.sender;
-        addresses[1] = destination;
+        address[] memory addresses = new address[](1);
+        addresses[0] = destination;
         requireTrustline(addresses);
         bool sent = IERC20(token).transferFrom(msg.sender, destination, value);
         require(sent, "Unable to pay tokens");
