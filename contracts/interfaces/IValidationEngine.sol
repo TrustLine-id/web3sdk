@@ -8,7 +8,9 @@ pragma solidity ^0.8;
 interface IValidationEngine {
     enum ValidationMode {
         Dapp,
-        UniswapV4
+        UniswapV4,
+        MorphoV2,
+        ERC3643
     }
 
     /// @notice Checks whether a transaction is trusted and verifies msg.sender + addresses[] against sanctions lists (advanced)
