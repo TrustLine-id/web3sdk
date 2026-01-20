@@ -9,7 +9,7 @@ import {Trustlined} from "../Trustlined.sol";
 /// @author Trustline
 /// @notice This contract is a firewall ensuring all funds going in and out are compliant
 contract PaymentFirewall is Trustlined {
-    constructor(address validationEngine) Trustlined(validationEngine) {}
+    constructor(address trustlineValidationEngineLogic) Trustlined(trustlineValidationEngineLogic) {}
 
     /// @notice Pay native ethers to a recipient
     /// @param destination The recipient address
