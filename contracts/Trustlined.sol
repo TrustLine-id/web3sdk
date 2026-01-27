@@ -26,27 +26,37 @@ abstract contract Trustlined {
     IValidationEngine public validationEngine;
 
     /// @dev Both a constructor and initializer functions are defined to support both upgradeable and non-upgradeable deployment scenarios
-    constructor(address trustlineValidationEngineLogic) {
-        __Trustlined_init(trustlineValidationEngineLogic);
+    /// @param trustlineValidationEngineLogic The Validation Engine logic contract address for deploying a proxy (used only if validationEngineAddress is zero)
+    /// @param trustlineValidationEngineProxy Optional Validation Engine proxy address. If provided (non-zero), it will be used directly instead of deploying a new proxy
+    constructor(address trustlineValidationEngineLogic, address trustlineValidationEngineProxy) {
+        __Trustlined_init(trustlineValidationEngineLogic, trustlineValidationEngineProxy);
     }
 
-    function __Trustlined_init(address logic) internal {
-        __Trustlined_init_unchained(logic);
+    function __Trustlined_init(address logic, address proxy) internal {
+        __Trustlined_init_unchained(logic, proxy);
     }
 
-    function __Trustlined_init_unchained(address logic) internal {
+    function __Trustlined_init_unchained(address logic, address proxy) internal {
         require(address(validationEngine) == address(0), "Already initialized");
-        require(logic.code.length > 0, "Logic is not a contract");
 
-        address initialOwner = msg.sender;
+        if (proxy != address(0)) {
+            // Use the provided Validation Engine proxy
+            require(proxy.code.length > 0, "Proxy is not a contract");
+            validationEngine = IValidationEngine(proxy);
+        } else {
+            // Deploy a new Validation Engine proxy
+            require(logic.code.length > 0, "Logic is not a contract");
 
-        // Deployment of the Validation Engine proxy
-        bytes memory data = abi.encodeWithSignature("initialize(address)", initialOwner);
-        address proxy = address(new ERC1967Proxy(logic, data));
+            address initialOwner = msg.sender;
 
-        validationEngine = IValidationEngine(proxy);
+            // Deployment of the Validation Engine proxy
+            bytes memory data = abi.encodeWithSignature("initialize(address)", initialOwner);
+            address proxy_ = address(new ERC1967Proxy(logic, data));
 
-        emit ValidationEngineDeployed(address(this), proxy, logic, initialOwner);
+            validationEngine = IValidationEngine(proxy_);
+
+            emit ValidationEngineDeployed(address(this), proxy_, logic, initialOwner);
+        }
     }
 
     /// @notice Checks whether a transaction is trusted and verifies msg.sender + addresses[] against sanctions lists
