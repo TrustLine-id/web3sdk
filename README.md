@@ -1,22 +1,294 @@
-# Trustline | web3sdk
+# Trustline Web3 SDK
 
-## Description
+A Solidity SDK for protecting EVM-compatible smart contracts from unauthorized access and malicious transactions by integrating Trustline's Oracle with multiple on-chain data sources.
 
-This library protects EVM-compatible smart contracts from unauthorized access and malicious transactions by integrating TrustLine's Oracle with multiple on-chain data sources. For more information, visit [Trustline's website](https://www.trustline.id).
+## Features
 
- * Secure operations on standard tokens such as [ERC20](https://docs.openzeppelin.com/contracts/erc20) and [ERC3643](https://www.erc3643.org)
- * Fully compatible with upgradeable smart contracts
- 
-:mage: **Not sure how to get started?** Contact us at contact@trustline.id
+- ✅ **Transaction Validation** - Validate blockchain transactions with customizable policies
+- ✅ **Sanctions Checking** - Verify addresses against sanctions lists
+- ✅ **Multiple Validation Modes** - Support for Dapp, Uniswap V4, Morpho V2, and ERC-3643 modes
+- ✅ **Address Verification** - Check sender and recipient addresses for compliance
+- ✅ **Upgradeable Support** - Fully compatible with upgradeable smart contracts
+- ✅ **ERC20 & ERC3643 Support** - Secure operations on standard token contracts
+- ✅ **Proxy Deployment** - Automatic Validation Engine proxy deployment
+- ✅ **Flexible Integration** - Use existing Validation Engine or deploy new instance
+
+## Installation
+
+```sh
+npm install @trustline.id/web3sdk
+```
+
+## Quick Start
+
+### Basic Contract Integration
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8;
+
+import {Trustlined} from "@trustline.id/web3sdk/contracts/Trustlined.sol";
+
+contract MyContract is Trustlined {
+    constructor(
+        address trustlineValidationEngineLogic,
+        address trustlineValidationEngineProxy
+    ) Trustlined(trustlineValidationEngineLogic, trustlineValidationEngineProxy) {}
+
+    function transfer(address recipient, uint256 amount) external {
+        // Validate sender only
+        requireTrustline();
+        
+        // Your transfer logic here
+        // ...
+    }
+
+    function transferWithRecipientCheck(address recipient, uint256 amount) external {
+        // Validate both sender and recipient
+        address[] memory addresses = new address[](1);
+        addresses[0] = recipient;
+        requireTrustline(addresses);
+        
+        // Your transfer logic here
+        // ...
+    }
+}
+```
+
+### Using Existing Validation Engine
+
+If you already have a Validation Engine proxy deployed, you can use it directly:
+
+```solidity
+contract MyContract is Trustlined {
+    constructor(address existingValidationEngineProxy) 
+        Trustlined(address(0), existingValidationEngineProxy) {}
+    
+    // If you pass address(0) for logic, the provided proxy will be used
+}
+```
+
+### Deploying New Validation Engine
+
+If you want to deploy a new Validation Engine proxy for your contract, the deployment will take place automatically during the deployment of your contract:
+
+```solidity
+contract MyContract is Trustlined {
+    constructor(address validationEngineLogic) 
+        Trustlined(validationEngineLogic, address(0)) {}
+    
+    // A new Validation Engine proxy will be deployed automatically during contract deployment
+}
+```
+
+## API Reference
+
+### Contract: `Trustlined`
+
+Base abstract contract that provides transaction validation functionality. Inherit from this contract to add Trustline validation to your smart contracts.
+
+#### Constructor
+
+```solidity
+constructor(
+    address trustlineValidationEngineLogic,
+    address trustlineValidationEngineProxy
+)
+```
+
+**Parameters:**
+- `trustlineValidationEngineLogic`: The Validation Engine logic contract address. Used only if `trustlineValidationEngineProxy` is `address(0)`. If both are provided, `trustlineValidationEngineProxy` takes precedence.
+- `trustlineValidationEngineProxy`: Optional Validation Engine proxy address. If provided (non-zero), it will be used directly. If `address(0)`, a new proxy will be deployed using the logic contract.
+
+**Behavior:**
+- If `trustlineValidationEngineProxy` is non-zero: Uses the provided proxy directly
+- If `trustlineValidationEngineProxy` is `address(0)`: Deploys a new ERC1967 proxy using `trustlineValidationEngineLogic` during your contract's deployment
+
+#### Functions
+
+##### `requireTrustline()`
+
+Requires a trusted transaction and a non-sanctioned `msg.sender`. Reverts if the transaction is not compliant.
+
+```solidity
+function requireTrustline() internal
+```
+
+**Usage:**
+```solidity
+function transfer(uint256 amount) external {
+    requireTrustline(); // Validates msg.sender only
+    // Your logic here
+}
+```
+
+##### `requireTrustline(address[] memory addresses)`
+
+Requires a trusted transaction and non-sanctioned `msg.sender` + addresses. Reverts if the transaction is not compliant.
+
+```solidity
+function requireTrustline(address[] memory addresses) internal
+```
+
+**Parameters:**
+- `addresses`: An array of addresses that will be verified by the policy (e.g., recipients, token addresses)
+
+**Usage:**
+```solidity
+function payTokens(address recipient, address token, uint256 amount) external {
+    address[] memory addresses = new address[](2);
+    addresses[0] = recipient;
+    addresses[1] = token;
+    requireTrustline(addresses); // Validates msg.sender, recipient, and token
+    // Your logic here
+}
+```
+
+##### `checkTrustlineStatus()`
+
+Checks whether a transaction is trusted and verifies `msg.sender` against sanctions lists. Returns `true` if compliant, `false` otherwise.
+
+```solidity
+function checkTrustlineStatus() internal view returns (bool)
+```
+
+**Usage:**
+```solidity
+function canTransfer() external view returns (bool) {
+    return checkTrustlineStatus();
+}
+```
+
+##### `checkTrustlineStatus(address[] memory addresses)`
+
+Checks whether a transaction is trusted and verifies `msg.sender` + addresses against sanctions lists. Returns `true` if compliant, `false` otherwise.
+
+```solidity
+function checkTrustlineStatus(address[] memory addresses) internal view returns (bool)
+```
+
+**Parameters:**
+- `addresses`: An array of addresses that will be verified by the policy
+
+**Usage:**
+```solidity
+function canPay(address recipient) external view returns (bool) {
+    address[] memory addresses = new address[](1);
+    addresses[0] = recipient;
+    return checkTrustlineStatus(addresses);
+}
+```
+
+#### Public Variables
+
+##### `validationEngine`
+
+The Trustline ValidationEngine contract address. This is set during contract initialization.
+
+```solidity
+IValidationEngine public validationEngine;
+```
+
+#### Events
+
+##### `ValidationEngineDeployed`
+
+Emitted when a new Validation Engine proxy is deployed for this client contract.
+
+```solidity
+event ValidationEngineDeployed(
+    address indexed client,
+    address indexed engineProxy,
+    address indexed logic,
+    address initialOwner
+);
+```
+
+**Parameters:**
+- `client`: The address of the integrating contract (i.e., the contract inheriting from Trustlined)
+- `engineProxy`: The freshly deployed ERC1967 proxy address for the Validation Engine instance
+- `logic`: The Validation Engine implementation (logic) contract the proxy points to at deployment time
+- `initialOwner`: The address passed to the engine's `initialize(address)` call (typically the deployer/initializer)
+
+## Validation Modes
+
+The SDK supports different validation modes for various DeFi protocols. These can be used with the advanced `IValidationEngine` interface methods:
+
+- **`Dapp`** (default) - Custom dapp validation mode
+- **`UniswapV4`** - Uniswap V4 protocol validation
+- **`MorphoV2`** - Morpho V2 protocol validation
+- **`ERC3643`** - ERC-3643 token standard validation
+
+## Examples
+
+### Payment Firewall
+
+A complete example that ensures all payments are compliant. See the [PaymentFirewall.sol](contracts/examples/PaymentFirewall.sol) contract for the full implementation.
+
+
+## Upgradeable Contracts
+
+The `Trustlined` contract is fully compatible with upgradeable contracts using OpenZeppelin's upgradeable pattern:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8;
+
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {Trustlined} from "@trustline.id/web3sdk/contracts/Trustlined.sol";
+
+contract UpgradeableContract is Initializable, Trustlined {
+    function initialize(
+        address trustlineValidationEngineLogic,
+        address trustlineValidationEngineProxy
+    ) public initializer {
+        __Trustlined_init(trustlineValidationEngineLogic, trustlineValidationEngineProxy);
+    }
+
+    function transfer(address to, uint256 amount) external {
+        address[] memory addresses = new address[](1);
+        addresses[0] = to;
+        requireTrustline(addresses);
+        // Your logic here
+    }
+}
+```
+
+## Build
+
+Build the SDK:
+
+```sh
+npm run build
+```
+
+This generates:
+- `artifacts/` - Compiled contract artifacts
+- `dist/bundle.js` - Browser bundle (for JavaScript usage)
+
+Compile contracts only:
+
+```sh
+npm run compile
+```
+
+## Security Considerations
+
+- Always validate addresses that receive funds or tokens
+- Use `requireTrustline(addresses[])` when checking recipients
+- Use `requireTrustline()` for sender-only validation when appropriate
+- The Validation Engine must be properly configured and deployed
 
 ## License
 
-All contracts are provided under the [MIT License](LICENSE), which explicitly disclaims warranties and limits the liability of the project's contributors and maintainers, including TrustLine. By using TrustLine Contracts, you acknowledge that you assume sole responsibility and accept all associated risks.
+MIT
 
+## Links
 
+- **Homepage:** https://www.trustline.id
+- **Repository:** https://github.com/TrustLine-id/web3sdk
+- **Issues:** https://github.com/TrustLine-id/web3sdk/issues
 
+## Support
 
-
-
-
-
+Not sure how to get started? Contact us at contact@trustline.id
