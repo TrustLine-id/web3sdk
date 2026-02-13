@@ -19,6 +19,18 @@ A Solidity SDK for protecting EVM-compatible smart contracts from unauthorized a
 npm install @trustline.id/web3sdk
 ```
 
+## Architecture
+
+Validation is performed through a small set of on-chain/off-chain components:
+
+- **Your contract** — Inherits from `Trustlined` and calls `requireTrustline()` or `checkTrustlineStatus()` before sensitive operations. It holds the address of a **Validation Engine proxy**.
+- **Validation Engine proxy** — An ERC1967 proxy that your contract talks to. It delegates all calls to the **Validation Engine logic** contract, so the implementation can be upgraded without changing your contract’s configuration. This proxy is deployed automatically when your contract is deployed or initialized, if you do not provide an existing proxy.
+- **Validation Engine logic** — The implementation contract that runs Trustline's transaction validation logic. It verifies certificates issued by **Trustline's Oracle backend** (and optionally consults other oracles) to decide whether a transaction and its addresses are authorized. Trustline deploys it on supported blockchains.
+- **Trustline's Oracle backend** — Trustline’s off-chain service that issues validation certificates to the on-chain Validation Engine.
+- **Other oracles** — The Validation Engine can aggregate data from additional on-chain oracles (e.g. sanctions lists) so validation uses multiple data sources.
+
+In short: your contract → Validation Engine proxy → Validation Engine logic → Trustline Oracle backend + other oracles. You only configure your contract with the logic address or an already-deployed proxy (for advanced use cases) at deploy time; the rest is handled by Trustline’s infrastructure.
+
 ## Quick Start
 
 ### Basic Contract Integration
@@ -55,7 +67,7 @@ contract MyContract is Trustlined {
 }
 ```
 
-### Using Existing Validation Engine
+### Using Existing Validation Engine Proxy
 
 If you already have a Validation Engine proxy deployed, you can use it directly:
 
@@ -68,7 +80,7 @@ contract MyContract is Trustlined {
 }
 ```
 
-### Deploying New Validation Engine
+### Deploying New Validation Engine Proxy
 
 If you want to deploy a new Validation Engine proxy for your contract, the deployment will take place automatically during the deployment of your contract:
 
