@@ -2,7 +2,7 @@
 pragma solidity ^0.8;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-//import {Trustlined} from "@trustline.id/web3sdk/contracts/Trustlined.sol";
+//import {Trustlined} from "@trustline.id/evmsdk/contracts/Trustlined.sol";
 import {Trustlined} from "../Trustlined.sol";
 
 /// @title PaymentFirewall

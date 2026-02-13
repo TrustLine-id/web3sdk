@@ -1,4 +1,4 @@
-# Trustline Web3 SDK
+# Trustline EVM SDK
 
 A Solidity SDK for protecting EVM-compatible smart contracts from unauthorized access and malicious transactions by integrating Trustline's Oracle with multiple on-chain data sources.
 
@@ -16,7 +16,7 @@ A Solidity SDK for protecting EVM-compatible smart contracts from unauthorized a
 ## Installation
 
 ```sh
-npm install @trustline.id/web3sdk
+npm install @trustline.id/evmsdk
 ```
 
 ## Architecture
@@ -39,7 +39,7 @@ In short: your contract → Validation Engine proxy → Validation Engine logic 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
-import {Trustlined} from "@trustline.id/web3sdk/contracts/Trustlined.sol";
+import {Trustlined} from "@trustline.id/evmsdk/contracts/Trustlined.sol";
 
 contract MyContract is Trustlined {
     constructor(
@@ -247,7 +247,7 @@ The `Trustlined` contract is fully compatible with upgradeable contracts using O
 pragma solidity ^0.8;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {Trustlined} from "@trustline.id/web3sdk/contracts/Trustlined.sol";
+import {Trustlined} from "@trustline.id/evmsdk/contracts/Trustlined.sol";
 
 contract UpgradeableContract is Initializable, Trustlined {
     function initialize(
@@ -298,8 +298,8 @@ MIT
 ## Links
 
 - **Homepage:** https://www.trustline.id
-- **Repository:** https://github.com/TrustLine-id/web3sdk
-- **Issues:** https://github.com/TrustLine-id/web3sdk/issues
+- **Repository:** https://github.com/TrustLine-id/evmsdk
+- **Issues:** https://github.com/TrustLine-id/evmsdk/issues
 
 ## Support
 
