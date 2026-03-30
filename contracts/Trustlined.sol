@@ -32,6 +32,7 @@ abstract contract Trustlined {
         if (trustlineValidationEngineProxy != address(0)) {
             // Use the provided Validation Engine proxy
             require(trustlineValidationEngineProxy.code.length > 0, "Proxy is not a contract");
+            _assertValidationEngine(trustlineValidationEngineProxy);
             validationEngine = IValidationEngine(trustlineValidationEngineProxy);
         } else {
             // Deploy a new Validation Engine proxy
@@ -43,6 +44,7 @@ abstract contract Trustlined {
             bytes memory data = abi.encodeWithSignature("initialize(address)", initialOwner);
             address proxy_ = address(new ERC1967Proxy(trustlineValidationEngineLogic, data));
 
+            _assertValidationEngine(proxy_);
             validationEngine = IValidationEngine(proxy_);
 
             emit ValidationEngineDeployed(address(this), proxy_, trustlineValidationEngineLogic, initialOwner);
@@ -69,5 +71,16 @@ abstract contract Trustlined {
     /// @notice Requires a trusted transaction and a non‑sanctioned msg.sender
     function requireTrustline() internal {
         validationEngine.requireTrustline(msg.sender, msg.value, msg.data);
+    }
+
+    /// @dev Basic runtime conformance check to ensure the candidate can be called as an IValidationEngine.
+    /// @dev This does not cryptographically attest Trustline provenance, but prevents accidental misconfiguration to unrelated contracts.
+    function _assertValidationEngine(address candidate) private view {
+        IValidationEngine engine = IValidationEngine(candidate);
+
+        try engine.checkTrustlineStatus(address(this), uint256(0), bytes("")) returns (bool) {}
+        catch {
+            revert("Invalid validation engine");
+        }
     }
 }

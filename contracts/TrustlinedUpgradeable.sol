@@ -32,6 +32,7 @@ abstract contract TrustlinedUpgradeable is Initializable {
 
         if (proxy != address(0)) {
             require(proxy.code.length > 0, "Proxy is not a contract");
+            _assertValidationEngine(proxy);
             validationEngine = IValidationEngine(proxy);
         } else {
             require(logic.code.length > 0, "Logic is not a contract");
@@ -40,6 +41,7 @@ abstract contract TrustlinedUpgradeable is Initializable {
             bytes memory data = abi.encodeWithSignature("initialize(address)", initialOwner);
             address proxy_ = address(new ERC1967Proxy(logic, data));
 
+            _assertValidationEngine(proxy_);
             validationEngine = IValidationEngine(proxy_);
 
             emit ValidationEngineDeployed(address(this), proxy_, logic, initialOwner);
@@ -64,6 +66,17 @@ abstract contract TrustlinedUpgradeable is Initializable {
     /// @notice Requires a trusted transaction and a non-sanctioned msg.sender
     function requireTrustline() internal {
         validationEngine.requireTrustline(msg.sender, msg.value, msg.data);
+    }
+
+    /// @dev Basic runtime conformance check to ensure the candidate can be called as an IValidationEngine.
+    /// @dev This does not cryptographically attest Trustline provenance, but prevents accidental misconfiguration to unrelated contracts.
+    function _assertValidationEngine(address candidate) private view {
+        IValidationEngine engine = IValidationEngine(candidate);
+
+        try engine.checkTrustlineStatus(address(this), uint256(0), bytes("")) returns (bool) {}
+        catch {
+            revert("Invalid validation engine");
+        }
     }
 
     uint256[49] private __gap;

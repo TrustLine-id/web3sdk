@@ -9,6 +9,13 @@ describe("Trustlined integration paths", function () {
     return mock;
   }
 
+  async function deployNonValidationEngine() {
+    const badFactory = await ethers.getContractFactory("NonValidationEngine");
+    const bad = await badFactory.deploy();
+    await bad.waitForDeployment();
+    return bad;
+  }
+
   describe("non-upgradeable Trustlined", function () {
     it("uses provided proxy directly", async function () {
       const [deployer, recipient] = await ethers.getSigners();
@@ -41,6 +48,15 @@ describe("Trustlined integration paths", function () {
 
       await expect(client.guardedNoArgs()).to.not.be.reverted;
       await expect(client.guardedWithAddress(recipient.address)).to.not.be.reverted;
+    });
+
+    it("rejects provided proxy that does not implement the validation interface", async function () {
+      const bad = await deployNonValidationEngine();
+      const clientFactory = await ethers.getContractFactory("TestTrustlinedClient");
+
+      await expect(
+        clientFactory.deploy(ethers.ZeroAddress, await bad.getAddress())
+      ).to.be.revertedWith("Invalid validation engine");
     });
   });
 
@@ -75,6 +91,24 @@ describe("Trustlined integration paths", function () {
       await expect(client.initialize(await engineLogic.getAddress(), ethers.ZeroAddress)).to.be.revertedWithCustomError(
         client,
         "InvalidInitialization"
+      );
+    });
+
+    it("rejects provided proxy that does not implement the validation interface", async function () {
+      const bad = await deployNonValidationEngine();
+
+      const clientImplFactory = await ethers.getContractFactory("TestTrustlinedUpgradeableClient");
+      const clientImpl = await clientImplFactory.deploy();
+      await clientImpl.waitForDeployment();
+
+      const proxyFactory = await ethers.getContractFactory("ERC1967Proxy");
+      const initData = clientImplFactory.interface.encodeFunctionData("initialize", [
+        ethers.ZeroAddress,
+        await bad.getAddress(),
+      ]);
+
+      await expect(proxyFactory.deploy(await clientImpl.getAddress(), initData)).to.be.revertedWith(
+        "Invalid validation engine"
       );
     });
   });
