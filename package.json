@@ -38,7 +38,11 @@
     "@openzeppelin/contracts-upgradeable": "^5.1.0"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
     "browserify": "^17.0.1",
+    "chai": "^4.5.0",
+    "ethers": "^6.15.0",
     "hardhat": "^2.22.17",
     "path": "^0.12.7"
   }
