@@ -8,7 +8,7 @@ A Solidity SDK for protecting EVM-compatible smart contracts from unauthorized a
 - ✅ **Sanctions Checking** - Verify addresses against sanctions lists
 - ✅ **Multiple Validation Modes** - Support for Dapp, Uniswap V4, Morpho V2, and ERC-3643 modes
 - ✅ **Address Verification** - Check sender and recipient addresses for compliance
-- ✅ **Upgradeable Support** - Fully compatible with upgradeable smart contracts
+- ✅ **Upgradeable Support** - Dedicated base contract for proxy-based deployments
 - ✅ **ERC20 & ERC3643 Support** - Secure operations on standard token contracts
 - ✅ **Proxy Deployment** - Automatic Validation Engine proxy deployment
 - ✅ **Flexible Integration** - Use existing Validation Engine or deploy new instance
@@ -33,7 +33,7 @@ In short: your contract → Validation Engine proxy → Validation Engine logic 
 
 ## Quick Start
 
-### Basic Contract Integration
+### Basic Contract Integration (non-upgradeable)
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -66,6 +66,8 @@ contract MyContract is Trustlined {
     }
 }
 ```
+
+> Use `Trustlined` for regular (non-proxy) deployments where constructor initialization is expected.
 
 ### Using Existing Validation Engine Proxy
 
@@ -240,16 +242,16 @@ A complete example that ensures all payments are compliant. See the [PaymentFire
 
 ## Upgradeable Contracts
 
-The `Trustlined` contract is fully compatible with upgradeable contracts using OpenZeppelin's upgradeable pattern:
+For proxy-based deployments, use `TrustlinedUpgradeable`. Do not use `Trustlined` directly in an upgradeable implementation.
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {Trustlined} from "@trustline.id/evmsdk/contracts/Trustlined.sol";
+import {TrustlinedUpgradeable} from "@trustline.id/evmsdk/contracts/TrustlinedUpgradeable.sol";
 
-contract UpgradeableContract is Initializable, Trustlined {
+contract UpgradeableContract is Initializable, TrustlinedUpgradeable {
     function initialize(
         address trustlineValidationEngineLogic,
         address trustlineValidationEngineProxy
@@ -265,6 +267,12 @@ contract UpgradeableContract is Initializable, Trustlined {
     }
 }
 ```
+
+### Which base contract should I use?
+
+- Use `Trustlined` for non-upgradeable contracts deployed directly.
+- Use `TrustlinedUpgradeable` for contracts deployed behind a proxy (UUPS/Transparent pattern).
+- Always call `__Trustlined_init(...)` from your contract initializer when using `TrustlinedUpgradeable`.
 
 ## Build
 

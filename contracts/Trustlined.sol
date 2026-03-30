@@ -25,37 +25,27 @@ abstract contract Trustlined {
     /// @dev This contract is set by the owner and must implement the IValidationEngine interface
     IValidationEngine public validationEngine;
 
-    /// @dev Both a constructor and initializer functions are defined to support both upgradeable and non-upgradeable deployment scenarios
-    /// @param trustlineValidationEngineLogic The Validation Engine logic contract address for deploying a proxy (used only if validationEngineAddress is zero)
+    /// @dev Constructor-only initialization for non-upgradeable deployment scenarios
+    /// @param trustlineValidationEngineLogic The Validation Engine logic contract address for deploying a proxy (used only if trustlineValidationEngineProxy is zero)
     /// @param trustlineValidationEngineProxy Optional Validation Engine proxy address. If provided (non-zero), it will be used directly instead of deploying a new proxy
     constructor(address trustlineValidationEngineLogic, address trustlineValidationEngineProxy) {
-        __Trustlined_init(trustlineValidationEngineLogic, trustlineValidationEngineProxy);
-    }
-
-    function __Trustlined_init(address logic, address proxy) internal {
-        __Trustlined_init_unchained(logic, proxy);
-    }
-
-    function __Trustlined_init_unchained(address logic, address proxy) internal {
-        require(address(validationEngine) == address(0), "Already initialized");
-
-        if (proxy != address(0)) {
+        if (trustlineValidationEngineProxy != address(0)) {
             // Use the provided Validation Engine proxy
-            require(proxy.code.length > 0, "Proxy is not a contract");
-            validationEngine = IValidationEngine(proxy);
+            require(trustlineValidationEngineProxy.code.length > 0, "Proxy is not a contract");
+            validationEngine = IValidationEngine(trustlineValidationEngineProxy);
         } else {
             // Deploy a new Validation Engine proxy
-            require(logic.code.length > 0, "Logic is not a contract");
+            require(trustlineValidationEngineLogic.code.length > 0, "Logic is not a contract");
 
             address initialOwner = msg.sender;
 
             // Deployment of the Validation Engine proxy
             bytes memory data = abi.encodeWithSignature("initialize(address)", initialOwner);
-            address proxy_ = address(new ERC1967Proxy(logic, data));
+            address proxy_ = address(new ERC1967Proxy(trustlineValidationEngineLogic, data));
 
             validationEngine = IValidationEngine(proxy_);
 
-            emit ValidationEngineDeployed(address(this), proxy_, logic, initialOwner);
+            emit ValidationEngineDeployed(address(this), proxy_, trustlineValidationEngineLogic, initialOwner);
         }
     }
 
