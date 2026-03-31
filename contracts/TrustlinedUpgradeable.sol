@@ -4,6 +4,7 @@ pragma solidity ^0.8;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IValidationEngine} from "./interfaces/IValidationEngine.sol";
+import {IValidationEngineInitializer} from "./interfaces/IValidationEngineInitializer.sol";
 
 /// @title Trustline's Upgradeable Base Contract
 /// @author Trustline
@@ -38,7 +39,7 @@ abstract contract TrustlinedUpgradeable is Initializable {
             require(logic.code.length > 0, "Logic is not a contract");
 
             address initialOwner = msg.sender;
-            bytes memory data = abi.encodeWithSignature("initialize(address)", initialOwner);
+            bytes memory data = abi.encodeCall(IValidationEngineInitializer.initialize, (initialOwner));
             address proxy_ = address(new ERC1967Proxy(logic, data));
 
             _assertValidationEngine(proxy_);
