@@ -2,6 +2,7 @@
 pragma solidity ^0.8;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 //import {Trustlined} from "@trustline.id/evmsdk/contracts/Trustlined.sol";
 import {Trustlined} from "../Trustlined.sol";
@@ -10,6 +11,8 @@ import {Trustlined} from "../Trustlined.sol";
 /// @author Trustline
 /// @notice This contract is a firewall ensuring all funds going in and out are compliant
 contract PaymentFirewall is Trustlined, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     constructor(address trustlineValidationEngineLogic, address trustlineValidationEngineProxy) Trustlined(trustlineValidationEngineLogic, trustlineValidationEngineProxy) {}
 
     /// @notice Pay native ethers to a recipient
@@ -37,7 +40,6 @@ contract PaymentFirewall is Trustlined, ReentrancyGuard {
         address[] memory addresses = new address[](1);
         addresses[0] = destination;
         requireTrustline(addresses);
-        bool sent = IERC20(token).transferFrom(msg.sender, destination, value);
-        require(sent, "Unable to pay tokens");
+        IERC20(token).safeTransferFrom(msg.sender, destination, value);
     }
 }
