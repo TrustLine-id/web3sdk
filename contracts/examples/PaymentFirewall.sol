@@ -15,6 +15,9 @@ contract PaymentFirewall is Trustlined, ReentrancyGuard {
     /// @notice Pay native ethers to a recipient
     /// @param destination The recipient address
     function payEthers(address payable destination) public payable nonReentrant {
+        require(destination != address(0), "Invalid destination");
+        require(msg.value > 0, "Invalid amount");
+
         address[] memory addresses = new address[](1);
         addresses[0] = destination;
         requireTrustline(addresses);
@@ -27,6 +30,10 @@ contract PaymentFirewall is Trustlined, ReentrancyGuard {
     /// @param token The ERC20 token address
     /// @param value The amount of tokens to pay
     function payTokens(address destination, address token, uint256 value) external nonReentrant {
+        require(destination != address(0), "Invalid destination");
+        require(token != address(0), "Invalid token");
+        require(value > 0, "Invalid amount");
+
         address[] memory addresses = new address[](1);
         addresses[0] = destination;
         requireTrustline(addresses);
